@@ -1,30 +1,32 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Anbieter, Dienstleistung, Buchung
+from .models import Provider,Service,Booking, BusinessHours
+from django.core.serializers import serialize
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = '__all__'
 
-class AnbieterSerializer(serializers.ModelSerializer):
-    user = UserSerializer()
-
+class ProviderSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Anbieter
-        fields = ['id', 'user', 'firmenname', 'email', 'telefonnummer', 'adresse', 'stadt', 'postleitzahl', 'land']
+        model = Provider
+        fields = '__all__'
 
-class DienstleistungSerializer(serializers.ModelSerializer):
-    anbieter = AnbieterSerializer()
-
+class ServiceSerializer(serializers.ModelSerializer):
+    provider = ProviderSerializer()  # Include related Provider
     class Meta:
-        model = Dienstleistung
-        fields = ['id', 'anbieter', 'name', 'beschreibung', 'dauer', 'additional_fields']
+        model = Service
+        fields = '__all__'
 
-class BuchungSerializer(serializers.ModelSerializer):
-    kunde = UserSerializer()
-    dienstleistung = DienstleistungSerializer()
-
+class BookingSerializer(serializers.ModelSerializer):
+    service = ServiceSerializer()  # Include related Service
     class Meta:
-        model = Buchung
-        fields = ['id', 'kunde', 'dienstleistung', 'startzeit', 'endzeit', 'additional_data']
+        model = Booking
+        fields = '__all__'
+
+class BusinessHoursSerializer(serializers.ModelSerializer):
+    provider = ProviderSerializer()  # Include related Provider
+    class Meta:
+        model = BusinessHours
+        fields = '__all__'
