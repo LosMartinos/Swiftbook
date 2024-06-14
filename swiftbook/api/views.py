@@ -6,38 +6,53 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import login,logout,authenticate
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import UserCreationForm
 from django.core.serializers import serialize
 
 def registerUserView(request):
-    return 1
-
-def loginUserView(request):
-
-    if request.user.is_authenticated:
-        return redirect('home')
+    form = UserCreationForm()
 
     if request.method == 'POST':
-        name = request.POST.get('username')
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit = False)
+            user.username = user.username.lower()
+            user.save()
+            login(request, user)
+            return redirect('homepage')
+        else:
+            messages.error(request, 'An error occurred duing registration')
+
+    return render(request, 'login_register.html', {'form': form})
+
+
+def loginUserView(request):
+    page = 'login'
+    if request.user.is_authenticated:
+        return redirect('homepage')
+
+    if request.method == 'POST':
+        username = request.POST.get('username')
         password = request.POST.get('password')
 
-        try: 
-            user = User.objects.get(name = name)
-        except:
-            messages.error(request, 'User does not exist')
-
-        user = authenticate(request, name=name, password = password)
+        user = authenticate(request, username=username, password=password)
         if user is not None:
-            login(request,user) # session will be created in db and broswer
-            return redirect('home')
+            login(request, user)  # session will be created in db and browser
+            return redirect('homepage')
         else:
-            messages.error(request, 'User OR password is wrong')
-    context =  {} #?
-    return render(request, 'templates/login.html', context)
+            try:
+                User.objects.get(username=username)
+                messages.error(request, 'Password is incorrect')
+            except User.DoesNotExist:
+                messages.error(request, 'User does not exist')
+
+    context = {'page': page}
+    return render(request, 'login_register.html', context)
 
 @login_required(login_url='login')
 def logoutUserView(request):
     logout(request)
-    return redirect('home')
+    return redirect('homepage')
 
 @login_required(login_url='login')
 def userCalendarView(request):
@@ -79,3 +94,11 @@ def userCalendarView(request):
 
     else:
         return JsonResponse({'error': 'Only GET method is allowed.'}, status=405)
+
+
+
+
+
+# Added endpoint for homepage
+def homepage(request):
+    return render(request, 'homepage.html')
