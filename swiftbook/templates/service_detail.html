@@ -67,7 +67,7 @@
     // Fetch Google Maps static image using longitude and latitude
     const longitude = '{{ service.provider.longitude }}';
     const latitude = '{{ service.provider.latitude }}';
-    const apiKey = 'AIzaSyBM7AO7oWpN5zyTghY6cUgFUpYaZ4hgDRU';  // Replace with your Google Maps API key
+    const apiKey = 'api-key';  // Replace with your Google Maps API key
     const mapImage = document.getElementById('mapImage');
     const mapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${latitude},${longitude}&zoom=15&size=300x300&maptype=roadmap&markers=color:red%7C${latitude},${longitude}&key=${apiKey}`;
 
