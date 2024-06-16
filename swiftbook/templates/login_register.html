@@ -4,21 +4,24 @@
 
 
 {% if page == 'login' %}
-<div>
+<div class="d-flex flex-column p-2">
     <form method="POST" action="">
         {% csrf_token %}
-
-        <label>Username:</label>
-        <input type="text" name="username" placeholder="Enter Username" />
-
-        <label>Password:</label>
-        <input type="password" name="password" placeholder="Enter Password" />
+        <div>
+            <label>Username:</label>
+            <input type="text" name="username" placeholder="Enter Username" />
+        </div>
+        
+        <div>
+            <label>Password:</label>
+            <input type="password" name="password" placeholder="Enter Password" /> 
+        </div>
 
         <input type="submit" value="Login" />
     </form>
-
     <p>havent signed up yet?</p>
     <a href="{% url 'register' %}">Sign up</a>
+    
 </div>
 
 {% else %}

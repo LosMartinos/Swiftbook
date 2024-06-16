@@ -1,0 +1,101 @@
+<!-- service_detail.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="container mb-5">
+                <h1>{{ service.provider.name }} - {{ service.name }}</h1>
+                <p>{{ service.description }}</p>
+                <p>Length: {{ service.length }}</p>
+                <button class="btn btn-primary">Book</button>
+            </div>
+            
+            <div id="calendar-container" class="mt-3">
+                <div id="calendar-header">
+                    <pre id="prev-week">◀</pre>
+                    <h2 id="week-range"></h2>
+                    <pre id="next-week">▶</pre>
+                </div>
+                <div id="calendar">
+                    <!-- Calendar days and slots will be dynamically generated here -->
+                </div>
+                <div id="booking-container">
+                    <!-- Selected timeslot details and booking button will appear here -->
+                </div>
+            </div>
+        </div>
+
+    
+
+        <div class="col-md-4">
+            <div class="card">
+                <img src="{% static 'img/loading.gif' %}" id="mapImage" alt="Map Image" class="card-img-top">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">Address</h2>
+                    <address class="card-text">
+                        {{ service.provider.address }} <br>
+                        {{ service.provider.postalcode }}, {{ service.provider.city }} <br>
+                        {{ service.provider.country }} <br>
+                    </address>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">Contacts</h2>
+                    <p class="card-text"><i class="bi bi-envelope"></i> Email: <a href="mailto: {{ service.provider.email }}">{{ service.provider.email }}</a></p>
+                    <p class="card-text"><i class="bi bi-telephone"></i> Phone: <a href="tel: {{ service.provider.phonenumber }}">{{ service.provider.phonenumber }}</a></p>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-body" id="opening-times">
+                    <h2 class="card-title mb-4">Opening times</h2>
+                    <div id="opening-hours-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Fetch Google Maps static image using longitude and latitude
+    const longitude = '{{ service.provider.longitude }}';
+    const latitude = '{{ service.provider.latitude }}';
+    const apiKey = 'AIzaSyBM7AO7oWpN5zyTghY6cUgFUpYaZ4hgDRU';  // Replace with your Google Maps API key
+    const mapImage = document.getElementById('mapImage');
+    const mapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${latitude},${longitude}&zoom=15&size=300x300&maptype=roadmap&markers=color:red%7C${latitude},${longitude}&key=${apiKey}`;
+
+    // Set the src attribute of the image with the Google Maps static image URL
+    mapImage.src = mapUrl;
+</script>
+
+<script>
+    const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    const openingHoursList = document.getElementById("opening-hours-list");
+    const businessHours = JSON.parse('{{ business_hours_json|escapejs }}');
+    console.log(businessHours)
+
+    businessHours.forEach(hour => {
+        const dayElement = document.createElement("p");
+        dayElement.classList.add("card-text");
+
+        const openTime = hour.open_time.slice(0, 5);  // Format 'HH:MM:SS' to 'HH:MM'
+        const closeTime = hour.close_time.slice(0, 5);
+
+        dayElement.textContent = `${days[hour.day]}: ${openTime} - ${closeTime}`;
+        openingHoursList.appendChild(dayElement);
+    });
+</script>
+
+<script src="{% static 'js/calendar-offer.js' %}"></script>
+{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'css/calendar-offer.css' %}">
+{% endblock styles %}

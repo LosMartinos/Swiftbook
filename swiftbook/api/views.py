@@ -2,12 +2,100 @@ from rest_framework import generics
 from django.contrib.auth.models import User
 from .models import Provider, Service, Booking, BusinessHours
 from django.http import JsonResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import login,logout,authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.core.serializers import serialize
+from django.http import JsonResponse
+from django.core.paginator import Paginator
+from .models import Provider, Service, BusinessHours, Timeslot
+from django.views.decorators.http import require_POST
+import json
+from django.core.serializers.json import DjangoJSONEncoder
+
+
+def service_detail(request, pk):
+    service = get_object_or_404(Service, pk=pk)
+    business_hours = []  # Fetch or define business hours here
+    return render(request, 'service_detail.html', {
+        'service': service,
+        'business_hours_json': json.dumps(business_hours),
+    })
+
+@require_POST
+def book_timeslot(request):
+    timeslot_id = request.POST.get('id')
+    timeslot = get_object_or_404(Timeslot, id=timeslot_id)
+    if timeslot.is_free:
+        timeslot.is_free = False
+        timeslot.booked_by = request.user
+        timeslot.save()
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False})
+
+def fetch_timeslots(request):
+    start = request.GET.get('start')
+    end = request.GET.get('end')
+    timeslots = Timeslot.objects.filter(date__range=[start, end])
+    timeslots_dict = {}
+    for timeslot in timeslots:
+        date_str = timeslot.date.isoformat()
+        if date_str not in timeslots_dict:
+            timeslots_dict[date_str] = []
+        timeslots_dict[date_str].append({
+            'id': timeslot.id,
+            'time': timeslot.time.strftime('%H:%M'),
+            'is_free': timeslot.is_free,
+        })
+    return JsonResponse(timeslots_dict)
+
+
+def service_detail(request, service_id):
+    service = get_object_or_404(Service, id=service_id)
+    business_hours = BusinessHours.objects.filter(provider=service.provider).order_by('day')
+
+    # Serialize business hours to JSON, ensuring it is an empty list if no business hours are found
+    business_hours_json = json.dumps(list(business_hours.values('day', 'open_time', 'close_time')), cls=DjangoJSONEncoder)
+
+    context = {
+        'service': service,
+        'business_hours_json': business_hours_json,
+    }
+    return render(request, 'service_detail.html', context)
+
+def offersView(request):
+    return render(request, 'offers.html')
+
+def offers(request):
+    query = request.GET.get('q', '')
+    page_number = request.GET.get('page', 1)
+    if query:
+        providers = Provider.objects.filter(name__icontains=query).order_by('name')
+    else:
+        providers = Provider.objects.all().order_by('name')
+    paginator = Paginator(providers, 6)  # 6 results per page
+    page_obj = paginator.get_page(page_number)
+    
+    offers = []
+    for provider in page_obj.object_list:
+        services = Service.objects.filter(provider=provider)
+        for service in services:
+            offers.append({
+                'provider_name': provider.name,
+                'service_name': service.name,
+                'description': service.description,
+                'length': service.length,
+                'service_id': service.id,
+            })
+    
+    data = {
+        'offers': offers,
+        'num_pages': paginator.num_pages,
+    }
+    return JsonResponse(data)
+    
 
 def registerUserView(request):
     form = UserCreationForm()

@@ -3,7 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import User
 
 
-class Provider(models.Model): 
+class Provider(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     email = models.EmailField(max_length=255)
@@ -34,3 +34,10 @@ class BusinessHours(models.Model):
     day = models.IntegerField()  # 0 = monday
     open_time = models.TimeField()
     close_time = models.TimeField()
+
+class Timeslot(models.Model):
+    service = models.ForeignKey(Service, on_delete=models.CASCADE)
+    date = models.DateField()
+    time = models.TimeField()
+    is_free = models.BooleanField(default=True)
+    booked_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
