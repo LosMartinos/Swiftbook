@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <h1>Create Offer</h1>
+    {% if error_message %}
+        <div class="alert alert-danger">{{ error_message }}</div>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-section">
+            <h2>Provider Details</h2>
+            {{ provider_form.as_p }}
+        </div>
+        
+        <div class="form-section">
+            <h2>Service Details</h2>
+            {{ service_form.as_p }}
+        </div>
+        
+        <div class="form-section">
+            <h2>Business Hours</h2>
+            {{ business_hours_formset.management_form }}
+            {% for form in business_hours_formset %}
+                <div class="business-hours-form">
+                    <label>{{ form.fields.day_label.initial }}</label>
+                    {{ form.open_time }}
+                    {{ form.close_time }}
+                </div>
+            {% endfor %}
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Create Offer</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .form-section {
+        background-color: #f8f9fa;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 10px;
+    }
+    .business-hours-form {
+        margin-bottom: 10px;
+    }
+</style>
+{% endblock %}

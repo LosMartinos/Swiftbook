@@ -5,7 +5,7 @@
 
 {% if page == 'login' %}
 <div class="d-flex flex-column p-2">
-    <form method="POST" action="">
+    <form class="mt-5" method="POST" action="">
         {% csrf_token %}
         <div>
             <label>Username:</label>
@@ -27,7 +27,7 @@
 {% else %}
 
 <div>
-    <form method="POST" action="">
+    <form class="mt-5" method="POST" action="">
         {% csrf_token %}
         {{form.as_p}}
         <input type="submit" value="Register" />

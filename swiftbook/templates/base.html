@@ -39,8 +39,8 @@
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
               <li><a class="nav-link" href="{% url 'offersView' %}">Browse Offers</a></li>
               {% if request.user.is_authenticated %}
-              <li><a class="nav-link" href="#">My Reservations</a></li>
-              <li><a class="nav-link" href="#">My Offers</a></li>
+              <li><a class="nav-link" href="{% url 'reservations' %}">My Reservations</a></li>
+              <li><a class="nav-link" href="{% url 'my_offers' %}">My Offers</a></li>
               {% endif %}
             </ul>
             <div class="d-flex align-items-center">
@@ -83,20 +83,20 @@
       <div class="container p-1">
           <div class="row pb-1">
               <div class="col-sm d-flex justify-content-center justify-content-sm-start mb-2 mb-sm-0">
-                  <i class="bi bi-info-square-fill" style="font-size: 1.5rem;"></i>
+                  <i class="bi bi-bug" style="font-size: 1.5rem;"></i>
               </div>
               <div class="col-sm d-flex justify-content-center mb-2 mb-sm-0">
                   <ul class="list-unstyled d-flex justify-content-center mb-0 align-items-center">
-                      <li class="px-2 px-sm-4"><a class="text-decoration-none text-secondary" href="#">About</a></li>
-                      <li class="px-2 px-sm-4"><a class="text-decoration-none text-secondary" href="#">Contact</a></li>
-                      <li class="px-2 px-sm-4"><a class="text-decoration-none text-secondary" href="#">FAQ</a></li>
+                      <li class="px-2 px-sm-4"><a class="text-decoration-none text-secondary" href="{% url 'about' %}">About</a></li>
+                      <li class="px-2 px-sm-4"><a class="text-decoration-none text-secondary" href="{% url 'contact' %}">Contact</a></li>
+                      <li class="px-2 px-sm-4"><a class="text-decoration-none text-secondary" href="{% url 'faq' %}">FAQ</a></li>
                   </ul>
               </div>
               <div class="col-sm d-flex justify-content-center justify-content-sm-end">
                   <ul class="list-unstyled d-flex justify-content-center justify-content-sm-end mb-0 align-items-center">
-                      <li class="px-2"><a href="#"><i class="bi bi-instagram text" style="font-size: 1.5rem;"></i></a></li>
-                      <li class="px-2"><a href="#"><i class="bi bi-twitter" style="font-size: 1.5rem;"></i></a></li>
-                      <li class="px-2"><a href="#"><i class="bi bi-github" style="font-size: 1.5rem;"></i></a></li>
+                      <li class="px-2"><a href="https://www.instagram.com/lalalalisa_m/"><i class="bi bi-instagram text" style="font-size: 1.5rem;"></i></a></li>
+                      <li class="px-2"><a href="https://x.com/Un4v5s8bgsVk9Xp"><i class="bi bi-twitter" style="font-size: 1.5rem;"></i></a></li>
+                      <li class="px-2"><a href="https://www.youtube.com/watch?v=xhc105UqlmY"><i class="bi bi-youtube" style="font-size: 1.5rem;"></i></a></li>
                   </ul>
               </div>
           </div>

@@ -10,10 +10,12 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch(`/offers?q=${query}&page=${page}`)
             .then(response => response.json())
             .then(data => {
+                console.log(data)
                 displayOffers(data.offers);
                 setupPagination(data.num_pages);
             })
             .catch(error => console.error('Error fetching offers:', error));
+            
     }
 
     function displayOffers(offers) {
@@ -23,14 +25,14 @@ document.addEventListener('DOMContentLoaded', function() {
             offerElement.className = 'col-md-4';
             offerElement.innerHTML = `
                 <div class="card mb-4" onclick="location.href='/service/${offer.service_id}'" style="cursor: pointer;">
-                    <div class="card-body">
+                    <div class="card-body overflow-y-auto" style="max-height: 20vh;">
                         <h5 class="card-title">${offer.provider_name} - ${offer.service_name}</h5>
                         <p class="card-text">${offer.description}</p>
-                        <p class="card-text">Length: ${offer.length}</p>
                     </div>
                 </div>
             `;
             offersContainer.appendChild(offerElement);
+            console.log(offer.length)
         });
     }
 

@@ -10,19 +10,164 @@ from django.contrib.auth.forms import UserCreationForm
 from django.core.serializers import serialize
 from django.http import JsonResponse
 from django.core.paginator import Paginator
+from django.forms import modelformset_factory
 from .models import Provider, Service, BusinessHours, Timeslot
 from django.views.decorators.http import require_POST
-import json
+from .forms import ProviderForm, ServiceForm, BusinessHoursForm
+import json, requests
+from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
 
+@login_required
+def my_offers(request):
+    try:
+        provider = Provider.objects.get(user=request.user)
+        services = Service.objects.filter(provider=provider)
+    except Provider.DoesNotExist:
+        provider = None
+        services = []
 
-def service_detail(request, pk):
-    service = get_object_or_404(Service, pk=pk)
-    business_hours = []  # Fetch or define business hours here
-    return render(request, 'service_detail.html', {
+    context = {
+        'provider': provider,
+        'services': services,
+    }
+
+    return render(request, 'my_offers.html', context)
+
+@login_required
+def delete_offer(request, service_id):
+    service = get_object_or_404(Service, id=service_id, provider__user=request.user)
+    service.delete()
+    return redirect('my_offers')
+
+def create_offer(request):
+    BusinessHoursFormSet = modelformset_factory(BusinessHours, form=BusinessHoursForm, extra=7)
+
+    if request.method == 'POST':
+        provider_form = ProviderForm(request.POST)
+        service_form = ServiceForm(request.POST)
+        formset = BusinessHoursForm(request.POST)
+        if provider_form.is_valid() and service_form.is_valid() and formset.is_valid():
+            provider = provider_form.save(commit=False)
+            address = f"{provider.address}, {provider.city}, {provider.postalcode}, {provider.country}"
+            geocode_api_key = settings.GOOGLE_API_KEY
+            geocode_url = f"https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={geocode_api_key}"
+            response = requests.get(geocode_url)
+            location = response.json()['results'][0]['geometry']['location']
+            provider.latitude = location['lat']
+            provider.longitude = location['lng']
+            provider.save()
+
+            service = service_form.save(commit=False)
+            service.provider = provider
+            service.additional_fields = []  # Save additional_fields as empty
+            service.save()
+
+            for form in formset:
+                business_hour = form.save(commit=False)
+                business_hour.provider = provider
+                business_hour.save()
+
+            return redirect('success_page')  # Redirect to a success page
+        else:
+            return JsonResponse({'error': 'Creation Failed'}, status=500)
+
+    else:
+        provider_form = ProviderForm()
+        service_form = ServiceForm()
+        formset = BusinessHoursFormSet(queryset=BusinessHours.objects.none())
+        DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        for form, day_label in zip(formset.forms, DAYS_OF_WEEK):
+            form.initial['day'] = DAYS_OF_WEEK.index(day_label) + 1
+            form.fields['day_label'].initial = day_label  # Correctly set the day label
+
+    context = {
+        'provider_form': provider_form,
+        'service_form': service_form,
+        'business_hours_formset': formset,
+    }
+
+    return render(request, 'create_offer.html', context)
+
+
+
+def about(request):
+    return render(request, 'about.html')
+
+def contact(request):
+    return render(request, 'contact.html')
+
+def faq(request):
+    return render(request, 'FAQ.html')
+
+def format_duration(duration):
+    total_seconds = int(duration.total_seconds())
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return f'{hours}h {minutes}m' if hours > 0 else f'{minutes}m'
+
+def get_user_booked_timeslots(request):
+    # Fetch user-specific booked timeslots for the days shown in the calendar
+    user_booked_timeslots = Timeslot.objects.filter(
+        booked_by=request.user,
+        date__gte=request.GET.get('start_date'),  # Filter by start_date parameter from frontend
+        date__lte=request.GET.get('end_date')     # Filter by end_date parameter from frontend
+    ).values('id', 'date', 'time', 'service__length', 'service__provider__name', 'service__name')
+
+    # Serialize datetime fields to ISO format and format the length
+    for timeslot in user_booked_timeslots:
+        timeslot['date'] = timeslot['date'].isoformat()
+        timeslot['service__length'] = format_duration(timeslot['service__length'])
+
+    return JsonResponse({'user_booked_timeslots': list(user_booked_timeslots)})
+
+def reservations(request):
+    if request.user.is_authenticated:
+        return render(request, 'my_reservations.html')
+    return redirect('homepage')
+
+def get_map_url(request, service_id):
+    service = get_object_or_404(Service, id=service_id)
+    maps_api_key = settings.GOOGLE_API_KEY
+    map_url = f"https://maps.googleapis.com/maps/api/staticmap?center={service.provider.latitude},{service.provider.longitude}&zoom=15&size=300x300&maptype=roadmap&markers=color:red%7C{service.provider.latitude},{service.provider.longitude}&key={maps_api_key}"
+    return JsonResponse({'map_url': map_url})
+
+def service_detail(request, service_id):
+    service = get_object_or_404(Service, id=service_id)
+    business_hours = BusinessHours.objects.filter(provider=service.provider).order_by('day')
+    
+    business_hours_json = json.dumps(list(business_hours.values('day', 'open_time', 'close_time')), cls=DjangoJSONEncoder)
+    
+    # Fetch Google Maps Static API image
+    context = {
         'service': service,
-        'business_hours_json': json.dumps(business_hours),
-    })
+        'business_hours_json': business_hours_json,
+        'csrf_token': request.COOKIES.get('csrftoken'),  # Get CSRF token from cookies
+    }
+    return render(request, 'service_detail.html', context)
+
+def fetch_weather_data(request):
+    api_key = settings.WEATHER_API_KEY
+    city = request.GET.get('city')
+    
+
+    weather_url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}"
+    weather_response = requests.get(weather_url)
+    
+    if weather_response.status_code == 200:
+        weather_data = weather_response.json()
+        temperature = round(weather_data['main']['temp'] - 273.15)  # Convert from Kelvin to Celsius
+        description = weather_data['weather'][0]['description']
+        icon = weather_data['weather'][0]['icon']
+        
+        weather_info = {
+            'temperature': temperature,
+            'description': description,
+            'icon_url': f"http://openweathermap.org/img/wn/{icon}.png"
+        }
+        return JsonResponse(weather_info)
+    return JsonResponse({'error': 'Could not fetch weather data'}, status=400)
+
 
 @require_POST
 def book_timeslot(request):
@@ -38,7 +183,11 @@ def book_timeslot(request):
 def fetch_timeslots(request):
     start = request.GET.get('start')
     end = request.GET.get('end')
-    timeslots = Timeslot.objects.filter(date__range=[start, end])
+    provider_id = request.GET.get('provider_id')
+    
+    # Assuming Timeslot is related to Service, and Service is related to Provider
+    timeslots = Timeslot.objects.filter(service__provider_id=provider_id, date__range=[start, end])
+    
     timeslots_dict = {}
     for timeslot in timeslots:
         date_str = timeslot.date.isoformat()
@@ -49,7 +198,20 @@ def fetch_timeslots(request):
             'time': timeslot.time.strftime('%H:%M'),
             'is_free': timeslot.is_free,
         })
-    return JsonResponse(timeslots_dict)
+    
+    business_hours = BusinessHours.objects.filter(provider_id=provider_id)
+    business_hours_dict = {}
+    for hours in business_hours:
+        business_hours_dict[hours.day] = {
+            'open_time': hours.open_time.strftime('%H:%M'),
+            'close_time': hours.close_time.strftime('%H:%M'),
+        }
+    
+    return JsonResponse({
+        'timeslots': timeslots_dict,
+        'business_hours': business_hours_dict
+    })
+
 
 
 def service_detail(request, service_id):

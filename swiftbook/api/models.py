@@ -15,12 +15,12 @@ class Provider(models.Model):
     longitude = models.CharField(max_length=100)
     latitude = models.CharField(max_length=100)
 
-class Service(models.Model): 
+class Service(models.Model):
     provider = models.ForeignKey(Provider, on_delete=models.CASCADE, related_name='dienstleistungen')
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
-    length = models.DurationField()
-    additional_fields = models.JSONField(default=list,blank=True, null=True)
+    length = models.DurationField()  # Correct field name is 'length', not 'duration'
+    additional_fields = models.JSONField(default=list, blank=True, null=True)
 
 class Booking(models.Model): 
     user = models.ForeignKey(User, on_delete=models.CASCADE)

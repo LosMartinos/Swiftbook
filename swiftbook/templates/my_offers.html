@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <h1>My Offers</h1>
+
+    {% if provider %}
+        <div class="card mb-3">
+            <div class="card-header">
+                <h2>{{ provider.name }}</h2>
+            </div>
+            <div class="card-body">
+                {% for service in services %}
+                    <div class="card mb-2">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ service.name }}</h5>
+                            <p class="card-text">{{ service.description }}</p>
+                            <a href="{% url 'delete_offer' service.id %}" class="btn btn-danger">Delete</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% else %}
+        <div class="card mb-3">
+            <div class="card-header">
+                <h2>New Offer</h2>
+            </div>
+            <div class="card-body">
+                <p>You don't have an offer yet, want to create a new offer?</p>
+                <a href="{% url 'create_offer' %}" class="btn btn-primary">Create</a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

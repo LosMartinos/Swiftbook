@@ -62,16 +62,8 @@
     cursor: pointer;
     text-align: center;
     font-size: 0.9rem; /* Adjust font size for timeslot */
-}
-
-.timeslot.free {
-    background: #28a745;
-    color: white;
-}
-
-.timeslot.booked {
-    background: #dc3545;
-    color: white;
+    font-weight: 600;
+    background: lightblue;
 }
 
 #booking-container {

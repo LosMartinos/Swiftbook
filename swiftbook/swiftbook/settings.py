@@ -130,3 +130,7 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+GOOGLE_API_KEY = "AIzaSyBM7AO7oWpN5zyTghY6cUgFUpYaZ4hgDRU"
+
+WEATHER_API_KEY = "ca6213bb91c5a31564cfe07c93175de3"

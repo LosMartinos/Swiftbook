@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Provider, Service, Booking, BusinessHours
+from .models import *
 from django.contrib.sessions.models import Session
 
 
@@ -9,4 +9,5 @@ admin.site.register(Service)
 admin.site.register(Booking)
 admin.site.register(BusinessHours)
 admin.site.register(Session)
+admin.site.register(Timeslot)
 

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block scripts %}
+    <script src="{% static 'js/my_reservations.js' %}"></script>
+{% endblock scripts %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{% static 'css/my_reservations.css' %}">
+{% endblock styles %}
+
+
+
+{% block content %}
+
+    <div id="calendar-container" class="mt-3">
+        <h1 class="mt-3 mb-5 text-center">Your Reservations</h1>
+        <div id="calendar-header">
+            <pre id="prev-week">◀</pre>
+            <h2 id="week-range"></h2>
+            <pre id="next-week">▶</pre>
+        </div>
+        <div id="calendar">
+            <!-- Calendar days and slots will be dynamically generated here -->
+        </div>
+        <div class="card mt-3" id="timeslot-card">
+            <div class="card-body" id="timeslot-info">
+                <h2 class="card-title">View Event</h2>
+                <p id="timeslot-message">No event selected, to view an event select it in the calendar first.</p>
+            </div>
+        </div>
+    </div>
+
+
+{% endblock content %}   
