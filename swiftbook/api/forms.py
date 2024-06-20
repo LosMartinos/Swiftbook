@@ -16,12 +16,20 @@ class ProviderForm(forms.ModelForm):
         }
 
 class ServiceForm(forms.ModelForm):
+    DURATION_CHOICES = [
+        (15, '15 minutes'),
+        (30, '30 minutes'),
+        (45, '45 minutes'),
+        (60, '60 minutes'),
+        (75, '75 minutes'),
+        (90, '90 minutes'),
+        (120, '120 minutes'),
+    ]
+
+    length = forms.ChoiceField(choices=DURATION_CHOICES, widget=forms.Select())
     class Meta:
         model = Service
         fields = ['name', 'description', 'length']
-        widgets = {
-            'length': forms.Select(choices=[(f"{i} minutes", f"{i} minutes") for i in range(0, 121, 15)]),
-        }
 
 class BusinessHoursForm(forms.ModelForm):
     day_label = forms.CharField(widget=forms.HiddenInput(), required=False)

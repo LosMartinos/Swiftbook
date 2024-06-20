@@ -46,16 +46,23 @@ def create_offer(request):
     if request.method == 'POST':
         provider_form = ProviderForm(request.POST)
         service_form = ServiceForm(request.POST)
-        formset = BusinessHoursForm(request.POST)
+        formset = BusinessHoursFormSet(request.POST)
+
+
         if provider_form.is_valid() and service_form.is_valid() and formset.is_valid():
             provider = provider_form.save(commit=False)
             address = f"{provider.address}, {provider.city}, {provider.postalcode}, {provider.country}"
             geocode_api_key = settings.GOOGLE_API_KEY
             geocode_url = f"https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={geocode_api_key}"
-            response = requests.get(geocode_url)
-            location = response.json()['results'][0]['geometry']['location']
-            provider.latitude = location['lat']
-            provider.longitude = location['lng']
+            try:
+                response = requests.get(geocode_url)
+                response.raise_for_status()  # Raise an error for non-2xx responses
+                location = response.json()['results'][0]['geometry']['location']
+                provider.latitude = location['lat']
+                provider.longitude = location['lng']
+            except (requests.RequestException, IndexError, KeyError) as e:
+                return JsonResponse({'error': 'Google fked up' + {str(e)}}, status=500)
+            
             provider.save()
 
             service = service_form.save(commit=False)
@@ -70,7 +77,22 @@ def create_offer(request):
 
             return redirect('success_page')  # Redirect to a success page
         else:
-            return JsonResponse({'error': 'Creation Failed'}, status=500)
+            count = 1
+            errors = {}
+            if not provider_form.is_valid():
+                 errors['provider_form_errors'] = provider_form.errors
+            if not service_form.is_valid():
+                 errors['service_form_errors'] = service_form.errors
+            if not formset.is_valid():
+                 formseterrr=[]
+                 for form in formset:
+                     if form.errors:
+                        count =  count +1
+                        formseterrr.append(form.errors)
+                        formseterrr.append(count)
+                        errors['formset_errors'] = formseterrr
+
+            return JsonResponse(errors, status=400)
 
     else:
         provider_form = ProviderForm()
@@ -344,9 +366,6 @@ def userCalendarView(request):
 
     else:
         return JsonResponse({'error': 'Only GET method is allowed.'}, status=405)
-
-
-
 
 
 # Added endpoint for homepage
