@@ -25,6 +25,7 @@
             {% for form in business_hours_formset %}
                 <div class="business-hours-form">
                     <label>{{ form.fields.day_label.initial }}</label>
+                    {{ form.day }}
                     {{ form.open_time }}
                     {{ form.close_time }}
                 </div>

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-{% load static %}
 <html lang="en">
 <head>
+  {% load static %}
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SwiftBook</title>
@@ -21,48 +21,51 @@
 </head>
 
 <body class="d-flex flex-column vh-100">
+  <header>
     <nav class="navbar sticky-top navbar-expand-lg bg-dark navbar-dark">
-        <div class="container-fluid">
-          <a class="navbar-brand" href="{% url 'homepage' %}">SwiftBook <i class="bi bi-cursor"></i></a>
-  
-          <button class="navbar-toggler" 
-          type="button" 
-          data-bs-toggle="collapse" 
-          data-bs-target="#navbarNavAltMarkup" 
-          aria-controls="navbarNavAltMarkup" 
-          aria-expanded="false" 
-          aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-          </button>
-  
-          <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-              <li><a class="nav-link" href="{% url 'offersView' %}">Browse Offers</a></li>
+      <div class="container-fluid">
+        <a class="navbar-brand" href="{% url 'homepage' %}">SwiftBook <i class="bi bi-cursor"></i></a>
+
+        <button class="navbar-toggler" 
+        type="button" 
+        data-bs-toggle="collapse" 
+        data-bs-target="#navbarNavAltMarkup" 
+        aria-controls="navbarNavAltMarkup" 
+        aria-expanded="false" 
+        aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li><a class="nav-link" href="{% url 'offersView' %}">Browse Offers</a></li>
+            {% if request.user.is_authenticated %}
+            <li><a class="nav-link" href="{% url 'reservations' %}">My Reservations</a></li>
+            <li><a class="nav-link" href="{% url 'my_offers' %}">My Offers</a></li>
+            {% endif %}
+          </ul>
+          <div class="d-flex align-items-center">
               {% if request.user.is_authenticated %}
-              <li><a class="nav-link" href="{% url 'reservations' %}">My Reservations</a></li>
-              <li><a class="nav-link" href="{% url 'my_offers' %}">My Offers</a></li>
+              <p class="text-info text-center m-0 p-3">You are logged in as: {{ request.user.username }}</p>
+              <button onclick="location.href = '{% url 'logout' %}'" data-mdb-ripple-init type="button" class="btn btn-secondary me-2">
+                Logout
+              </button>
+              {% else %}
+              <button onclick="location.href = '{% url 'login' %}'" data-mdb-ripple-init type="button" class="btn btn-secondary me-2">
+                Login
+              </button>
+              <button onclick="location.href = '{% url 'register' %}'" data-mdb-ripple-init type="button" class="btn btn-primary me-3">
+                Sign up
+              </button>
               {% endif %}
-            </ul>
-            <div class="d-flex align-items-center">
-                {% if request.user.is_authenticated %}
-                <p class="text-info text-center m-0 p-3">You are logged in as: {{ request.user.username }}</p>
-                <button onclick="location.href = '{% url 'logout' %}'" data-mdb-ripple-init type="button" class="btn btn-secondary me-2">
-                  Logout
-                </button>
-                {% else %}
-                <button onclick="location.href = '{% url 'login' %}'" data-mdb-ripple-init type="button" class="btn btn-secondary me-2">
-                  Login
-                </button>
-                <button onclick="location.href = '{% url 'register' %}'" data-mdb-ripple-init type="button" class="btn btn-primary me-3">
-                  Sign up
-                </button>
-                {% endif %}
-            </div>
           </div>
         </div>
+      </div>
     </nav>
-
-    <div>
+  </header>
+    
+  <main class="container d-flex justify-content-center">
+    <article>
       {% if messages %}
       <ul class="messages">
         {% for message in messages %}
@@ -70,40 +73,39 @@
         {% endfor %}
       </ul>
       {% endif %}
-    </div>
+    </article>
 
-    <main class="container d-flex justify-content-center">
-          {% block content %}
+    {% block content %}
 
-          {% endblock content %}
-    </main>
+    {% endblock content %}
+  </main>
    
 
-    <footer class="footer bg-dark text-white mt-auto">
-      <div class="container p-1">
-          <div class="row pb-1">
-              <div class="col-sm d-flex justify-content-center justify-content-sm-start mb-2 mb-sm-0">
-                  <i class="bi bi-bug" style="font-size: 1.5rem;"></i>
-              </div>
-              <div class="col-sm d-flex justify-content-center mb-2 mb-sm-0">
-                  <ul class="list-unstyled d-flex justify-content-center mb-0 align-items-center">
-                      <li class="px-2 px-sm-4"><a class="text-decoration-none text-secondary" href="{% url 'about' %}">About</a></li>
-                      <li class="px-2 px-sm-4"><a class="text-decoration-none text-secondary" href="{% url 'contact' %}">Contact</a></li>
-                      <li class="px-2 px-sm-4"><a class="text-decoration-none text-secondary" href="{% url 'faq' %}">FAQ</a></li>
-                  </ul>
-              </div>
-              <div class="col-sm d-flex justify-content-center justify-content-sm-end">
-                  <ul class="list-unstyled d-flex justify-content-center justify-content-sm-end mb-0 align-items-center">
-                      <li class="px-2"><a href="https://www.instagram.com/lalalalisa_m/"><i class="bi bi-instagram text" style="font-size: 1.5rem;"></i></a></li>
-                      <li class="px-2"><a href="https://x.com/Un4v5s8bgsVk9Xp"><i class="bi bi-twitter" style="font-size: 1.5rem;"></i></a></li>
-                      <li class="px-2"><a href="https://www.youtube.com/watch?v=xhc105UqlmY"><i class="bi bi-youtube" style="font-size: 1.5rem;"></i></a></li>
-                  </ul>
-              </div>
-          </div>
-          <p class="mb-2 border-top text-center pt-2 pb-0">&copy; SwiftBook, Inc. 2024</p>
-      </div>
+  <footer class="footer bg-dark text-white mt-auto">
+    <div class="container p-1">
+        <div class="row pb-1">
+            <div class="col-sm d-flex justify-content-center justify-content-sm-start mb-2 mb-sm-0">
+                <i class="bi bi-bug" style="font-size: 1.5rem;"></i>
+            </div>
+            <div class="col-sm d-flex justify-content-center mb-2 mb-sm-0">
+                <ul class="list-unstyled d-flex justify-content-center mb-0 align-items-center">
+                    <li class="px-2 px-sm-4"><a class="text-decoration-none text-secondary" href="{% url 'about' %}">About</a></li>
+                    <li class="px-2 px-sm-4"><a class="text-decoration-none text-secondary" href="{% url 'contact' %}">Contact</a></li>
+                    <li class="px-2 px-sm-4"><a class="text-decoration-none text-secondary" href="{% url 'faq' %}">FAQ</a></li>
+                </ul>
+            </div>
+            <div class="col-sm d-flex justify-content-center justify-content-sm-end">
+                <ul class="list-unstyled d-flex justify-content-center justify-content-sm-end mb-0 align-items-center">
+                    <li class="px-2"><a href="https://www.instagram.com/lalalalisa_m/"><i class="bi bi-instagram text" style="font-size: 1.5rem;"></i></a></li>
+                    <li class="px-2"><a href="https://x.com/Un4v5s8bgsVk9Xp"><i class="bi bi-twitter" style="font-size: 1.5rem;"></i></a></li>
+                    <li class="px-2"><a href="https://www.youtube.com/watch?v=xhc105UqlmY"><i class="bi bi-youtube" style="font-size: 1.5rem;"></i></a></li>
+                </ul>
+            </div>
+        </div>
+        <p class="mb-2 border-top text-center pt-2 pb-0">&copy; SwiftBook, Inc. 2024</p>
+    </div>
   </footer>
 
-    {% block scripts %}
-    {% endblock scripts %}
+  {% block scripts %}
+  {% endblock scripts %}
 </body>

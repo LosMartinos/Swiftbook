@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Provider,Service,Booking, BusinessHours
+from .models import Provider,Service,Booking, BusinessHours, Timeslot
 from django.core.serializers import serialize
 
 class UserSerializer(serializers.ModelSerializer):
@@ -29,4 +29,9 @@ class BusinessHoursSerializer(serializers.ModelSerializer):
     provider = ProviderSerializer()  # Include related Provider
     class Meta:
         model = BusinessHours
+        fields = '__all__'
+
+class TimeslotSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Timeslot
         fields = '__all__'

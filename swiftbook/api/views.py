@@ -17,6 +17,7 @@ from .forms import ProviderForm, ServiceForm, BusinessHoursForm
 import json, requests
 from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
+from urllib.parse import quote
 
 @login_required
 def my_offers(request):
@@ -53,7 +54,9 @@ def create_offer(request):
             provider = provider_form.save(commit=False)
             address = f"{provider.address}, {provider.city}, {provider.postalcode}, {provider.country}"
             geocode_api_key = settings.GOOGLE_API_KEY
-            geocode_url = f"https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={geocode_api_key}"
+            encoded_address = quote(address)
+            geocode_url = f"https://maps.googleapis.com/maps/api/geocode/json?address={encoded_address}&key={geocode_api_key}"
+            print(geocode_url)
             try:
                 response = requests.get(geocode_url)
                 response.raise_for_status()  # Raise an error for non-2xx responses
@@ -99,9 +102,9 @@ def create_offer(request):
         service_form = ServiceForm()
         formset = BusinessHoursFormSet(queryset=BusinessHours.objects.none())
         DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-        for form, day_label in zip(formset.forms, DAYS_OF_WEEK):
-            form.initial['day'] = DAYS_OF_WEEK.index(day_label) + 1
-            form.fields['day_label'].initial = day_label  # Correctly set the day label
+        for index, form in enumerate(formset.forms):
+            form.initial = {'day': index, 'day_label': DAYS_OF_WEEK[index]}
+            form.fields['day_label'].initial = DAYS_OF_WEEK[index]
 
     context = {
         'provider_form': provider_form,
@@ -168,39 +171,62 @@ def service_detail(request, service_id):
     }
     return render(request, 'service_detail.html', context)
 
-def fetch_weather_data(request):
+def fetch_weather_forecast(request):
+    provider_id = request.GET.get('providerId')
+    
+    try:
+        provider = Provider.objects.get(id=provider_id)
+    except Provider.DoesNotExist:
+        return JsonResponse({'error': 'Provider not found'}, status=404)
+    
+    lat = provider.latitude
+    lon = provider.longitude
     api_key = settings.WEATHER_API_KEY
-    city = request.GET.get('city')
     
-
-    weather_url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}"
-    weather_response = requests.get(weather_url)
+    forecast_url = f"http://api.openweathermap.org/data/2.5/forecast?lat={lat}&lon={lon}&appid={api_key}"
+    forecast_response = requests.get(forecast_url)
     
-    if weather_response.status_code == 200:
-        weather_data = weather_response.json()
-        temperature = round(weather_data['main']['temp'] - 273.15)  # Convert from Kelvin to Celsius
-        description = weather_data['weather'][0]['description']
-        icon = weather_data['weather'][0]['icon']
+    if forecast_response.status_code == 200:
+        forecast_data = forecast_response.json()
+        forecast_list = forecast_data['list']
         
-        weather_info = {
-            'temperature': temperature,
-            'description': description,
-            'icon_url': f"http://openweathermap.org/img/wn/{icon}.png"
-        }
-        return JsonResponse(weather_info)
+        forecast_info = []
+        for forecast in forecast_list:
+            forecast_info.append({
+                'date': forecast['dt_txt'],
+                'temperature': round(forecast['main']['temp'] - 273.15),  # Convert from Kelvin to Celsius
+                'description': forecast['weather'][0]['description'],
+                'icon_url': f"http://openweathermap.org/img/wn/{forecast['weather'][0]['icon']}.png"
+            })
+        return JsonResponse({'forecast': forecast_info})
     return JsonResponse({'error': 'Could not fetch weather data'}, status=400)
 
 
+@login_required
 @require_POST
 def book_timeslot(request):
-    timeslot_id = request.POST.get('id')
-    timeslot = get_object_or_404(Timeslot, id=timeslot_id)
-    if timeslot.is_free:
-        timeslot.is_free = False
-        timeslot.booked_by = request.user
-        timeslot.save()
+    try:
+        data = json.loads(request.body)
+        service_id = data.get('service_id')
+        date = data.get('date')
+        time = data.get('time')
+
+        service = get_object_or_404(Service, id=service_id)
+        timeslot, created = Timeslot.objects.get_or_create(
+            service=service,
+            date=date,
+            time=time,
+            defaults={'is_free': False, 'booked_by': request.user}
+        )
+
+        if not created and timeslot.is_free:
+            timeslot.is_free = False
+            timeslot.booked_by = request.user
+            timeslot.save()
+
         return JsonResponse({'success': True})
-    return JsonResponse({'success': False})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 
 def fetch_timeslots(request):
     start = request.GET.get('start')
