@@ -1,7 +1,7 @@
 from rest_framework import generics
 from django.contrib.auth.models import User
 from .models import Provider, Service, Booking, BusinessHours
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import login,logout,authenticate
@@ -18,6 +18,22 @@ import json, requests
 from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
 from urllib.parse import quote
+import dicttoxml
+
+def to_xml(data):
+    xml = dicttoxml.dicttoxml(data, custom_root='response', attr_type=False)
+    print(xml.decode)
+    return xml.decode()
+
+def create_response(data, response_type='json', stat=0):
+    if response_type == 'application/xml':
+        xml_response = to_xml(data)
+        return HttpResponse(xml_response, content_type='application/xml')
+    else:
+        if(stat):
+            return JsonResponse(data,stat)
+        return JsonResponse(data)
+
 
 @login_required
 def my_offers(request):
@@ -144,7 +160,8 @@ def get_user_booked_timeslots(request):
         timeslot['date'] = timeslot['date'].isoformat()
         timeslot['service__length'] = format_duration(timeslot['service__length'])
 
-    return JsonResponse({'user_booked_timeslots': list(user_booked_timeslots)})
+    return create_response({'user_booked_timeslots': list(user_booked_timeslots)}, request.META.get('HTTP_ACCEPT', 'application/json')
+)
 
 def reservations(request):
     if request.user.is_authenticated:
@@ -155,7 +172,8 @@ def get_map_url(request, service_id):
     service = get_object_or_404(Service, id=service_id)
     maps_api_key = settings.GOOGLE_API_KEY
     map_url = f"https://maps.googleapis.com/maps/api/staticmap?center={service.provider.latitude},{service.provider.longitude}&zoom=15&size=300x300&maptype=roadmap&markers=color:red%7C{service.provider.latitude},{service.provider.longitude}&key={maps_api_key}"
-    return JsonResponse({'map_url': map_url})
+    return create_response({'map_url': map_url}, request.META.get('HTTP_ACCEPT', 'application/json'))
+
 
 def service_detail(request, service_id):
     service = get_object_or_404(Service, id=service_id)
@@ -177,7 +195,8 @@ def fetch_weather_forecast(request):
     try:
         provider = Provider.objects.get(id=provider_id)
     except Provider.DoesNotExist:
-        return JsonResponse({'error': 'Provider not found'}, status=404)
+        return create_response({'error': 'Provider not found'}, request.META.get('HTTP_ACCEPT', 'application/json', 404))
+
     
     lat = provider.latitude
     lon = provider.longitude
@@ -198,8 +217,8 @@ def fetch_weather_forecast(request):
                 'description': forecast['weather'][0]['description'],
                 'icon_url': f"http://openweathermap.org/img/wn/{forecast['weather'][0]['icon']}.png"
             })
-        return JsonResponse({'forecast': forecast_info})
-    return JsonResponse({'error': 'Could not fetch weather data'}, status=400)
+        return create_response({'forecast': forecast_info}, request.META.get('HTTP_ACCEPT', 'application/json'))
+    return create_response(({'error': 'Could not fetch weather data'}, request.META.get('HTTP_ACCEPT', 'application/json',status=400)))
 
 
 @login_required
@@ -224,9 +243,10 @@ def book_timeslot(request):
             timeslot.booked_by = request.user
             timeslot.save()
 
-        return JsonResponse({'success': True})
+        return create_response({'success': True}, request.META.get('HTTP_ACCEPT', 'application/json'))
     except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+        return create_response({'success': False, 'error': str(e)}, request.META.get('HTTP_ACCEPT', 'application/json'))
+
 
 def fetch_timeslots(request):
     start = request.GET.get('start')
@@ -254,11 +274,9 @@ def fetch_timeslots(request):
             'open_time': hours.open_time.strftime('%H:%M'),
             'close_time': hours.close_time.strftime('%H:%M'),
         }
-    
-    return JsonResponse({
-        'timeslots': timeslots_dict,
-        'business_hours': business_hours_dict
-    })
+
+    return create_response({'timeslots': timeslots_dict,'business_hours': business_hours_dict}, request.META.get('HTTP_ACCEPT', 'application/json'))
+
 
 
 
@@ -304,7 +322,8 @@ def offers(request):
         'offers': offers,
         'num_pages': paginator.num_pages,
     }
-    return JsonResponse(data)
+    return create_response((data), request.META.get('HTTP_ACCEPT', 'application/json'))
+
     
 
 def registerUserView(request):
@@ -364,34 +383,38 @@ def userCalendarView(request):
         try:
             user = User.objects.get(id=userid)
         except User.DoesNotExist:
-            return JsonResponse({'error': 'User not found.'}, status=404)
-
+            return create_response({'error': 'User not found.'}, request.META.get('HTTP_ACCEPT', 'application/json'),404)
         if calendar_type == "p":
             try:
                 provider = Provider.objects.get(user=user)
             except Provider.DoesNotExist:
-                return JsonResponse({'error': 'User is not a provider.'}, status=403)
-            
+                return create_response({'error': 'User is not a provider.'}, request.META.get('HTTP_ACCEPT', 'application/json'),403)
+
             if request.user.id != provider.user.id:
-                return JsonResponse({'error': 'Unauthorized access to provider calendar.'}, status=403)
+                return create_response({'error': 'Unauthorized access to provider calendar.'}, request.META.get('HTTP_ACCEPT', 'application/json'),403)
+
 
             provider_bookings = Booking.objects.filter(provider=provider, start__range=[start_datetime, end_datetime])
             response = serialize('json', provider_bookings)
             return JsonResponse(response, safe=False)
+            return create_response({response}, request.META.get('HTTP_ACCEPT', 'application/json'),403)
+
 
         elif calendar_type == "u": #check here if maybe friends or if profile public or whatever tf
             if request.user.id != int(userid):
-                return JsonResponse({'error': 'Unauthorized access to user calendar.'}, status=403)
+                return create_response({'error': 'Unauthorized access to user calendar.'}, request.META.get('HTTP_ACCEPT', 'application/json'),403)
+
 
             user_bookings = Booking.objects.filter(user=user, start__range=[start_datetime, end_datetime])
             response = serialize('json', user_bookings)
             return JsonResponse(response, safe=False)
 
         else:
-            return JsonResponse({'error': 'Empty or invalid calendar type specified.'}, status=400)
+            return create_response({'error': 'Empty or invalid calendar type specified.'}, request.META.get('HTTP_ACCEPT', 'application/json'),400)
 
     else:
-        return JsonResponse({'error': 'Only GET method is allowed.'}, status=405)
+        return create_response({'error': 'Only GET method is allowed.'}, request.META.get('HTTP_ACCEPT', 'application/json'),405)
+
 
 
 # Added endpoint for homepage

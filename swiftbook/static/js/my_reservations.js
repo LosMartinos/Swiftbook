@@ -38,7 +38,19 @@ document.addEventListener("DOMContentLoaded", () => {
         const { start, end } = getWeekDates(new Date(currentDate));
         const startISO = formatDate(start);
         const endISO = formatDate(end);
-
+        
+        /*
+        fetch(`/api/user_timeslots?start_date=${startISO}&end_date=${endISO}`, {
+            headers: {
+                'Accept': 'application/xml'  // Request XML response
+            }
+        })
+        .then(response => response.text())  // Get response as text
+        .then(str => new window.DOMParser().parseFromString(str, "text/xml"))  // Parse the text to XML
+        .then(data => {
+            console.log(data);  // Log the parsed XML document object
+        */
+    
         // Fetch timeslots for the current user within the specified range
         fetch(`/api/user_timeslots?start_date=${startISO}&end_date=${endISO}`)
             .then(response => response.json())
