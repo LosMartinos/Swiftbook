@@ -54,9 +54,11 @@ def my_offers(request):
 @login_required
 def delete_offer(request, service_id):
     service = get_object_or_404(Service, id=service_id, provider__user=request.user)
-    service.delete()
+    provider = get_object_or_404(Provider, id=service.provider_id, user=request.user)
+    provider.delete()
     return redirect('my_offers')
 
+@login_required
 def create_offer(request):
     BusinessHoursFormSet = modelformset_factory(BusinessHours, form=BusinessHoursForm, extra=7)
 
@@ -65,9 +67,9 @@ def create_offer(request):
         service_form = ServiceForm(request.POST)
         formset = BusinessHoursFormSet(request.POST)
 
-
         if provider_form.is_valid() and service_form.is_valid() and formset.is_valid():
             provider = provider_form.save(commit=False)
+            provider.user = request.user
             address = f"{provider.address}, {provider.city}, {provider.postalcode}, {provider.country}"
             geocode_api_key = settings.GOOGLE_API_KEY
             encoded_address = quote(address)
@@ -79,8 +81,9 @@ def create_offer(request):
                 location = response.json()['results'][0]['geometry']['location']
                 provider.latitude = location['lat']
                 provider.longitude = location['lng']
+                
             except (requests.RequestException, IndexError, KeyError) as e:
-                return JsonResponse({'error': 'Google fked up' + {str(e)}}, status=500)
+                return JsonResponse({'error': 'Google API error: ' + str(e)}, status=500)
             
             provider.save()
 
@@ -94,22 +97,22 @@ def create_offer(request):
                 business_hour.provider = provider
                 business_hour.save()
 
-            return redirect('success_page')  # Redirect to a success page
+            return redirect('/my_offers/')  # Redirect to a success page
         else:
             count = 1
             errors = {}
             if not provider_form.is_valid():
-                 errors['provider_form_errors'] = provider_form.errors
+                errors['provider_form_errors'] = provider_form.errors
             if not service_form.is_valid():
-                 errors['service_form_errors'] = service_form.errors
+                errors['service_form_errors'] = service_form.errors
             if not formset.is_valid():
-                 formseterrr=[]
-                 for form in formset:
-                     if form.errors:
-                        count =  count +1
-                        formseterrr.append(form.errors)
-                        formseterrr.append(count)
-                        errors['formset_errors'] = formseterrr
+                formset_errors = []
+                for form in formset:
+                    if form.errors:
+                        count += 1
+                        formset_errors.append(form.errors)
+                        formset_errors.append(count)
+                errors['formset_errors'] = formset_errors
 
             return JsonResponse(errors, status=400)
 
