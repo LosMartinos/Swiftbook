@@ -17,13 +17,13 @@ class ProviderForm(forms.ModelForm):
 
 class ServiceForm(forms.ModelForm):
     DURATION_CHOICES = [
-        (15, '15 minutes'),
-        (30, '30 minutes'),
-        (45, '45 minutes'),
-        (60, '60 minutes'),
-        (75, '75 minutes'),
-        (90, '90 minutes'),
-        (120, '120 minutes'),
+        (15*60, '15 minutes'),
+        (30*60, '30 minutes'),
+        (45*60, '45 minutes'),
+        (60*60, '60 minutes'),
+        (75*60, '75 minutes'),
+        (90*60, '90 minutes'),
+        (120*60, '120 minutes'),
     ]
 
     length = forms.ChoiceField(choices=DURATION_CHOICES, widget=forms.Select())

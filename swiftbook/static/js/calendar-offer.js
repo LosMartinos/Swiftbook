@@ -69,7 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         let currentTime = new Date(`${formatDate(day)}T${open_time}`);
                         const endTime = new Date(`${formatDate(day)}T${close_time}`);
     
-                        while (currentTime <= endTime) {
+                        while (currentTime < endTime) {
                             const slotDiv = document.createElement('div');
                             slotDiv.className = 'timeslot';
     

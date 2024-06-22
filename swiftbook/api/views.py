@@ -19,6 +19,7 @@ from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
 from urllib.parse import quote
 import dicttoxml
+from datetime import datetime
 
 def to_xml(data):
     xml = dicttoxml.dicttoxml(data, custom_root='response', attr_type=False)
@@ -419,6 +420,34 @@ def userCalendarView(request):
         return create_response({'error': 'Only GET method is allowed.'}, request.META.get('HTTP_ACCEPT', 'application/json'),405)
 
 
+@login_required(login_url='login')
+def provider_timeslots(request):
+    if request.method == 'GET':
+        user = request.user
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+
+        try:
+            provider = Provider.objects.get(user=user)
+        except Provider.DoesNotExist:
+            return JsonResponse({'error': 'User is not a provider.'}, status=403)
+
+        timeslots = Timeslot.objects.filter(service__provider=provider, date__range=[start_date, end_date]).select_related('service', 'booked_by')
+
+        response_data = []
+        for timeslot in timeslots:
+            response_data.append({
+                'date': timeslot.date,
+                'time': timeslot.time,
+                'service__name': timeslot.service.name,
+                'service__length': timeslot.service.length,
+                'booked_by__name': timeslot.booked_by.username if timeslot.booked_by else 'Available',
+                'provider__name': timeslot.service.provider.name
+            })
+
+        return JsonResponse({'provider_booked_timeslots': response_data})
+    else:
+        return JsonResponse({'error': 'Only GET method is allowed.'}, status=405)
 
 # Added endpoint for homepage
 def homepage(request):
