@@ -96,7 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const formattedDate = formatHumanReadableDate(selectedDate);
-        const formattedLength = formatDuration(slot.service__length);
+        const formattedLength = slot.service__length; // Use the already formatted length from the response
         const bookedBy = slot.booked_by__name ? slot.booked_by__name : "Available";
         const providerName = slot.provider__name;
 
@@ -116,14 +116,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return new Intl.DateTimeFormat('en-US', options).format(date);
     }
 
-    function formatDuration(duration) {
-        const parts = duration.split(':');
-        const hours = parts[0] ? `${parts[0]} hours ` : '';
-        const minutes = parts[1] ? `${parts[1]} minutes ` : '';
-        const seconds = parts[2] ? `${parts[2]} seconds` : '';
-        return `${hours}${minutes}${seconds}`.trim();
-    }
-
     prevWeekBtn.addEventListener('click', () => {
         currentDate.setDate(currentDate.getDate() - 7);
         updateWeekRange();
@@ -135,6 +127,62 @@ document.addEventListener("DOMContentLoaded", () => {
         updateWeekRange();
         loadTimeslots();
     });
+
+    window.editDescription = function(serviceId) {
+        const descriptionElement = document.getElementById(`service-description-${serviceId}`);
+        const textareaElement = document.getElementById(`edit-description-${serviceId}`);
+        const saveButton = document.getElementById(`save-description-btn-${serviceId}`);
+        
+        descriptionElement.classList.add('d-none');
+        textareaElement.classList.remove('d-none');
+        saveButton.classList.remove('d-none');
+    }
+
+    window.saveDescription = function(serviceId) {
+        const textareaElement = document.getElementById(`edit-description-${serviceId}`);
+        const newDescription = textareaElement.value;
+
+        fetch('/update_service_description', {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ id: serviceId, description: newDescription })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const descriptionElement = document.getElementById(`service-description-${serviceId}`);
+                descriptionElement.textContent = newDescription;
+
+                descriptionElement.classList.remove('d-none');
+                textareaElement.classList.add('d-none');
+                document.getElementById(`save-description-btn-${serviceId}`).classList.add('d-none');
+            } else {
+                alert(data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error updating description:', error);
+            alert('An error occurred while updating the description. Please try again.');
+        });
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
 
     updateWeekRange();
     loadTimeslots();

@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block scripts %}
-    <script src="{% static 'js/my_offers.js' %}"></script>
+    <script src="{% static 'js/my_offers.js' %}" defer></script>
 {% endblock scripts %}
 
 {% block styles %}
@@ -23,7 +23,10 @@
                     <div class="card mb-2">
                         <div class="card-body">
                             <h5 class="card-title">{{ service.name }}</h5>
-                            <p class="card-text">{{ service.description }}</p>
+                            <p class="card-text" id="service-description-{{ service.id }}">{{ service.description }}</p>
+                            <textarea class="form-control d-none" id="edit-description-{{ service.id }}">{{ service.description }}</textarea>
+                            <button class="btn btn-primary" onclick="editDescription({{ service.id }})">Edit</button>
+                            <button class="btn btn-success d-none" id="save-description-btn-{{ service.id }}" onclick="saveDescription({{ service.id }})">Save</button>
                             <a href="{% url 'delete_offer' service.id %}" class="btn btn-danger">Delete</a>
                         </div>
                     </div>
