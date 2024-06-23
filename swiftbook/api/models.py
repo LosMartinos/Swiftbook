@@ -18,7 +18,7 @@ class Provider(models.Model):
 class Service(models.Model):
     provider = models.ForeignKey(Provider, on_delete=models.CASCADE, related_name='dienstleistungen')
     name = models.CharField(max_length=255)
-    description = models.TextField(blank=True, null=True)
+    description = models.TextField(default="Description")
     length = models.DurationField()  # Correct field name is 'length', not 'duration'
     additional_fields = models.JSONField(default=list, blank=True, null=True)
 

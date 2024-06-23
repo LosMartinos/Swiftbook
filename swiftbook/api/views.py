@@ -84,7 +84,8 @@ def create_offer(request):
                 provider.longitude = location['lng']
                 
             except (requests.RequestException, IndexError, KeyError) as e:
-                return JsonResponse({'error': 'Google API error: ' + str(e)}, status=500)
+                return create_response({'error': 'Google API error: ' + str(e)}, request.META.get('HTTP_ACCEPT', 'application/json',400))
+
             
             provider.save()
 
@@ -115,7 +116,8 @@ def create_offer(request):
                         formset_errors.append(count)
                 errors['formset_errors'] = formset_errors
 
-            return JsonResponse(errors, status=400)
+            return create_response({errors}, request.META.get('HTTP_ACCEPT', 'application/json',400))
+
 
     else:
         provider_form = ProviderForm()
@@ -164,8 +166,7 @@ def get_user_booked_timeslots(request):
         timeslot['date'] = timeslot['date'].isoformat()
         timeslot['service__length'] = format_duration(timeslot['service__length'])
 
-    return create_response({'user_booked_timeslots': list(user_booked_timeslots)}, request.META.get('HTTP_ACCEPT', 'application/json')
-)
+    return create_response({'user_booked_timeslots': list(user_booked_timeslots)}, request.META.get('HTTP_ACCEPT', 'application/json'))
 
 def reservations(request):
     if request.user.is_authenticated:
@@ -328,6 +329,35 @@ def offers(request):
     }
     return create_response((data), request.META.get('HTTP_ACCEPT', 'application/json'))
 
+@login_required
+def update_service_description(request):
+    if request.method == 'PATCH':
+        try:
+            user = request.user
+            provider = Provider.objects.get(user=user)
+
+            data = json.loads(request.body)
+            new_description = data.get('description', '')
+
+            if new_description == '':
+                return create_response({'error': 'Description is required.'}, request.META.get('HTTP_ACCEPT', 'application/json'), 400)
+
+            service = get_object_or_404(Service, provider, provider=provider)
+            service.description = new_description
+            service.save()
+
+            return create_response({'status': 'success', 'description': service.description}, request.META.get('HTTP_ACCEPT', 'application/json'), 200)
+
+        except Provider.DoesNotExist:
+            return create_response({'error': 'User is not a provider.'}, request.META.get('HTTP_ACCEPT', 'application/json'), 403)
+        except json.JSONDecodeError:
+            return create_response({'error': 'Invalid JSON.'}, request.META.get('HTTP_ACCEPT', 'application/json'), 400)
+        except User.DoesNotExist:
+            return create_response({'error': 'User not found.'}, request.META.get('HTTP_ACCEPT', 'application/json'), 404)
+        except Service.DoesNotExist:
+            return create_response({'error': 'Service not found.'}, request.META.get('HTTP_ACCEPT', 'application/json'), 404)
+    return create_response({'error': 'Invalid HTTP Method.'}, request.META.get('HTTP_ACCEPT', 'application/json'), 400)
+
     
 
 def registerUserView(request):
@@ -400,8 +430,7 @@ def userCalendarView(request):
 
             provider_bookings = Booking.objects.filter(provider=provider, start__range=[start_datetime, end_datetime])
             response = serialize('json', provider_bookings)
-            return JsonResponse(response, safe=False)
-            return create_response({response}, request.META.get('HTTP_ACCEPT', 'application/json'),403)
+            return create_response({response}, request.META.get('HTTP_ACCEPT', 'application/json'))
 
 
         elif calendar_type == "u": #check here if maybe friends or if profile public or whatever tf
@@ -411,7 +440,7 @@ def userCalendarView(request):
 
             user_bookings = Booking.objects.filter(user=user, start__range=[start_datetime, end_datetime])
             response = serialize('json', user_bookings)
-            return JsonResponse(response, safe=False)
+            return create_response({response}, request.META.get('HTTP_ACCEPT', 'application/json'))
 
         else:
             return create_response({'error': 'Empty or invalid calendar type specified.'}, request.META.get('HTTP_ACCEPT', 'application/json'),400)
@@ -430,7 +459,7 @@ def provider_timeslots(request):
         try:
             provider = Provider.objects.get(user=user)
         except Provider.DoesNotExist:
-            return JsonResponse({'error': 'User is not a provider.'}, status=403)
+            return create_response({'error': 'User is not a provider.'}, request.META.get('HTTP_ACCEPT', 'application/json'),403)
 
         timeslots = Timeslot.objects.filter(service__provider=provider, date__range=[start_date, end_date]).select_related('service', 'booked_by')
 
@@ -444,10 +473,11 @@ def provider_timeslots(request):
                 'booked_by__name': timeslot.booked_by.username if timeslot.booked_by else 'Available',
                 'provider__name': timeslot.service.provider.name
             })
+        return create_response({'provider_booked_timeslots': response_data}, request.META.get('HTTP_ACCEPT', 'application/json'))
 
-        return JsonResponse({'provider_booked_timeslots': response_data})
     else:
-        return JsonResponse({'error': 'Only GET method is allowed.'}, status=405)
+        return create_response({'error': 'Only GET method is allowed.'}, request.META.get('HTTP_ACCEPT', 'application/json'),405)
+
 
 # Added endpoint for homepage
 def homepage(request):
