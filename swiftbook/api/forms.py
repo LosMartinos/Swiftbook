@@ -1,5 +1,5 @@
 from django import forms
-from .models import Provider, Service, BusinessHours
+from .models import Provider, Service, BusinessHours, User
 
 # Constants for the time choices (e.g., 00:00 to 23:30 in 30-minute intervals)
 TIME_CHOICES = [(f"{hour:02}:{minute:02}:00", f"{hour:02}:{minute:02}") for hour in range(24) for minute in (0, 30)]
@@ -14,6 +14,19 @@ class ProviderForm(forms.ModelForm):
             'postalcode': forms.TextInput(attrs={'placeholder': 'Postal code'}),
             'country': forms.TextInput(attrs={'placeholder': 'Country'}),
         }
+
+class EditUserForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['username', 'first_name', 'last_name', 'email']
+        widgets = {
+            'username': forms.TextInput(attrs={'placeholder': 'Username'}),
+            'first_name': forms.TextInput(attrs={'placeholder': 'First name'}),
+            'last_name': forms.TextInput(attrs={'placeholder': 'Last name'}),
+            'email': forms.EmailInput(attrs={'placeholder': 'Email'}),
+        }
+
+        
 
 class ServiceForm(forms.ModelForm):
     DURATION_CHOICES = [

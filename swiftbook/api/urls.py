@@ -24,4 +24,5 @@ urlpatterns = [
     path('delete_offer/<int:service_id>/', views.delete_offer, name='delete_offer'),
     path('api/provider_timeslots', views.provider_timeslots, name='provider_timeslots'),
     path('update_service_description', views.update_service_description, name='update_service_description'),
+    path('user/update/', views.update_user, name='update-user'),
 ]

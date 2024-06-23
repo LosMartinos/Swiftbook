@@ -5,6 +5,7 @@ from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import login,logout,authenticate
+from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.core.serializers import serialize
@@ -13,7 +14,7 @@ from django.core.paginator import Paginator
 from django.forms import modelformset_factory
 from .models import Provider, Service, BusinessHours, Timeslot
 from django.views.decorators.http import require_POST
-from .forms import ProviderForm, ServiceForm, BusinessHoursForm
+from .forms import ProviderForm, ServiceForm, BusinessHoursForm, EditUserForm
 import json, requests
 from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
@@ -227,6 +228,23 @@ def fetch_weather_forecast(request):
 
 
 @login_required
+@require_http_methods(["PUT"])
+def update_user(request):
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return create_response({'error': 'Invalid JSON.'}, request.META.get('HTTP_ACCEPT', 'application/json'), 400)
+
+    form = EditUserForm(data, instance=request.user)
+    
+    if form.is_valid():
+        form.save()
+        return create_response({'status': 'success'}, request.META.get('HTTP_ACCEPT', 'application/json'))
+    else:
+        return create_response({'error': form.errors}, request.META.get('HTTP_ACCEPT', 'application/json'), 400)
+
+
+@login_required
 @require_POST
 def book_timeslot(request):
     try:
@@ -334,19 +352,20 @@ def update_service_description(request):
     if request.method == 'PATCH':
         try:
             user = request.user
-            provider = Provider.objects.get(user=user)
+            provider = Provider.objects.get(user=request.user)
 
             data = json.loads(request.body)
             new_description = data.get('description', '')
+            service_id = data.get('id')
 
             if new_description == '':
                 return create_response({'error': 'Description is required.'}, request.META.get('HTTP_ACCEPT', 'application/json'), 400)
 
-            service = get_object_or_404(Service, provider, provider=provider)
+            service = get_object_or_404(Service,  id=service_id, provider=provider)
             service.description = new_description
             service.save()
 
-            return create_response({'status': 'success', 'description': service.description}, request.META.get('HTTP_ACCEPT', 'application/json'), 200)
+            return create_response({'status': 'success', 'description': service.description}, request.META.get('HTTP_ACCEPT', 'application/json'))
 
         except Provider.DoesNotExist:
             return create_response({'error': 'User is not a provider.'}, request.META.get('HTTP_ACCEPT', 'application/json'), 403)
@@ -469,7 +488,7 @@ def provider_timeslots(request):
                 'date': timeslot.date,
                 'time': timeslot.time,
                 'service__name': timeslot.service.name,
-                'service__length': timeslot.service.length,
+                'service__length': format_duration(timeslot.service.length),
                 'booked_by__name': timeslot.booked_by.username if timeslot.booked_by else 'Available',
                 'provider__name': timeslot.service.provider.name
             })
