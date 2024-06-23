@@ -243,6 +243,9 @@ def update_user(request):
     else:
         return create_response({'error': form.errors}, request.META.get('HTTP_ACCEPT', 'application/json'), 400)
 
+def update_user_view(request):
+    return render(request, 'update_user.html')
+
 
 @login_required
 @require_POST

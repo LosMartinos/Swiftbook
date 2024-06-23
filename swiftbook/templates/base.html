@@ -46,7 +46,7 @@
           </ul>
           <div class="d-flex align-items-center">
               {% if request.user.is_authenticated %}
-              <p class="text-info text-center m-0 p-3">You are logged in as: {{ request.user.username }}</p>
+              <p class="text-info text-center m-0 p-3">You are logged in as: <a href="{% url 'update_user_view' %}">{{ request.user.username }}</a></p>
               <button onclick="location.href = '{% url 'logout' %}'" data-mdb-ripple-init type="button" class="btn btn-secondary me-2">
                 Logout
               </button>

@@ -25,4 +25,5 @@ urlpatterns = [
     path('api/provider_timeslots', views.provider_timeslots, name='provider_timeslots'),
     path('update_service_description', views.update_service_description, name='update_service_description'),
     path('user/update/', views.update_user, name='update-user'),
+    path('update_user_view', views.update_user_view, name='update_user_view'),
 ]
