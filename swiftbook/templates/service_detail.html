@@ -94,7 +94,7 @@
         const openTime = hour.open_time.slice(0, 5);  // Format 'HH:MM:SS' to 'HH:MM'
         const closeTime = hour.close_time.slice(0, 5);
 
-        dayElement.textContent = `${days[hour.day - 1]}: ${openTime} - ${closeTime}`;
+        dayElement.textContent = `${days[hour.day -1]}: ${openTime} - ${closeTime}`;
         openingHoursList.appendChild(dayElement);
     });
 </script>

@@ -38,7 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function loadTimeslots() {
         const { start, end } = getWeekDates(new Date(currentDate));
         const today = new Date();
-
+    
         fetch(`/api/timeslots?start=${formatDate(start)}&end=${formatDate(end)}&provider_id=${serviceData.providerId}`)
             .then(response => response.json())
             .then(data => {
@@ -51,11 +51,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     day.setDate(start.getDate() + i);
     
                     // Skip dates before today
-                    if (day < today) {
+                    if (day < today.setHours(0, 0, 0, 0)) {
                         continue;
                     }
-    
+                    
+                    console.log(day)
                     const dayOfWeek = day.getDay();
+                    console.log(dayOfWeek)
                     const dayDiv = document.createElement('div');
                     dayDiv.className = 'calendar-day';
                     dayDiv.innerHTML = `<p>${dayNames[dayOfWeek]}</p><h3>${day.getDate()}</h3><hr>`;
@@ -104,6 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
     }
+    
 
     function parseDurationToMinutes(durationString) {
         const [hours, minutes, seconds] = durationString.split(':').map(Number);
